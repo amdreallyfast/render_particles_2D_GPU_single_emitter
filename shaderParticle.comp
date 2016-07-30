@@ -1,4 +1,4 @@
-#version 430 core
+#version 440
 
 struct Particle
 {
@@ -15,7 +15,7 @@ struct Particle
 // calling glDispatchCompute(...).
 layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
-layout (std430, binding = 0) buffer ParticleBuffer {
+layout (binding = 0) buffer ParticleBuffer {
     Particle AllParticles[];
 };
 
@@ -26,28 +26,6 @@ uniform uint uMaxParticlesEmittedPerFrame;
 uniform uint uMaxParticleCount;
 //??layout atomic counter for particlesEmittedThisFrame? see https://www.opengl.org/wiki/Atomic_Counter ??
 
-void UpdateParticle(uint bufferIndex)
-{
-    // as OpenGL 4.4, compute shaders don't have C's idea of pointers or C++'s idea of 
-    // reference, so make a copy of the particle, work with it, and copy it back in
-    Particle p = AllParticles[bufferIndex];
-
-    // update position
-    p._position += (p._velocity * uDeltaTimeSec);
-    
-    // if it went out of bounds, restart it
-    vec2 distToCenter = p._position - uEmitterCenter;
-    float distSqr = dot(distToCenter, distToCenter);
-    if (distSqr > uRadiusSqr)
-    {
-        // just a simple reset for now
-        p._position = uEmitterCenter;
-    }
-
-    // copy it back in
-    AllParticles[bufferIndex] = p;
-}
-
 void main()
 {
     // pluck out the index of the work item for this run of the shader
@@ -56,11 +34,29 @@ void main()
     // Also Note: The number of dispatched work groups may result in an index that is beyond the 
     // maximum number of particles, so check the value against the max.
     uint index = gl_GlobalInvocationID.x;
-    if (index >= uMaxParticleCount)
+    if (index < uMaxParticleCount)
     {
-        return;
-    }
+        // as OpenGL 4.4, compute shaders don't have C's idea of pointers or C++'s idea of 
+        // reference, so make a copy of the particle, work with it, and copy it back in
+        Particle p = AllParticles[index];
 
-    UpdateParticle(index);
+        // update position
+        vec2 deltaPosition = p._velocity * uDeltaTimeSec;
+        deltaPosition = vec2(0.0f, 0.0f);
+        //p._position = p._position + deltaPosition;
+        p._position = deltaPosition;
+    
+        //// if it went out of bounds, restart it
+        //vec2 distToCenter = p._position - uEmitterCenter;
+        //float distSqr = dot(distToCenter, distToCenter);
+        //if (distSqr > uRadiusSqr)
+        //{
+        //    // just a simple reset for now
+        //    p._position = uEmitterCenter;
+        //}
+
+        // copy it back in
+        AllParticles[index] = p;
+    }
 }
 

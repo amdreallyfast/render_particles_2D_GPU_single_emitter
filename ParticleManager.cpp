@@ -98,20 +98,17 @@ void ParticleManager::Init(unsigned int programId,
         this->ResetParticle(_allParticles.data() + particleCount);
     }
 
-    //uniform float uDeltaTimeSec;     // self-explanatory
-    //uniform float uRadiusSqr;
-    //uniform vec2 uEmitterCenter;
-    //uniform uint uMmaxParticlesEmittedPerFrame;
-
     _unifLocDeltaTimeSec = glGetUniformLocation(_computeProgramId, "uDeltaTimeSec");
     _unifLocRadiusSqr = glGetUniformLocation(_computeProgramId, "uRadiusSqr");
     _unifLocEmitterCenter = glGetUniformLocation(_computeProgramId, "uEmitterCenter");
     _unifLocMaxParticlesEmittedPerFrame = glGetUniformLocation(_computeProgramId, "uMmaxParticlesEmittedPerFrame");
+    _unifLocMaxParticleCount = glGetUniformLocation(_computeProgramId, "uMaxParticleCount");
 
     glUseProgram(_computeProgramId);
     
     glUniform1f(_unifLocRadiusSqr, _radiusSqr);
     glUniform1ui(_unifLocMaxParticlesEmittedPerFrame, maxParticlesEmittedPerFrame);
+    glUniform1ui(_unifLocMaxParticleCount, numParticles);
 
     // feeding vectors into uniforms requires an array, or at least they need to be contiguous 
     // in memory, and I would rather explicitly spell out an array than assume the value order 
@@ -135,6 +132,7 @@ void ParticleManager::Init(unsigned int programId,
         workGroupSize[1], workGroupSize[2]);
 
     int workGroupInvocations = 0;
+    // ??why is GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, which is in the lists at https://www.opengl.org/wiki/GLAPI/glGet, bute  undefined, but GL_MAX_COMPUTE_LOCAL_INVOCATIONS, which is not in the lists on that website, is defined? are they the same thing??
     glGetIntegerv(GL_MAX_COMPUTE_LOCAL_INVOCATIONS, &workGroupInvocations);
     printf("max local invocations = %d\n", workGroupInvocations);
 
@@ -235,6 +233,7 @@ void ParticleManager::Update(float deltaTimeSec)
     glUseProgram(_computeProgramId);
     glUniform1f(_unifLocDeltaTimeSec, deltaTimeSec);
 
+
     // the work groups specified here MUST (??you sure??) match the values specified by 
     // "local_size_x", "local_size_y", and "local_size_z" in the compute shader's input layout
     GLuint numWorkGroupsX = (_allParticles.size() / 128) + 1;
@@ -248,7 +247,10 @@ void ParticleManager::Update(float deltaTimeSec)
     // (2) Vertex data sourced from buffer objects after the barrier will reflect data written 
     // by shaders prior to the barrier.  The affected buffer(s) is determined by the buffers 
     // that were bound for the vertex attributes.  In this case, that means GL_ARRAY_BUFFER.
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+    glUseProgram(0);
 
     //unsigned int emitCounter = 0;
     //for (size_t particleIndex = 0; particleIndex < _allParticles.size(); particleIndex++)
@@ -326,7 +328,17 @@ Creator:    John Cox (7-2-2016)
 -----------------------------------------------------------------------------------------------*/
 void ParticleManager::ResetParticle(Particle *resetThis) const
 {
-    resetThis->_position = _center;
+    // Note: The hard-coded mod100 is just to prevent the random axis magnitudes from 
+    // getting too crazy different from each other.
+    float newX = (float)(RandomPosAndNeg() % 100);
+    float newY = (float)(RandomPosAndNeg() % 100);
+    glm::vec2 randomVector = glm::normalize(glm::vec2(newX, newY));
+    
+    // hard-coded region of radius 0.1f in window space
+    float radiusVariation = RandomOnRange0to1() * 0.1f; 
+
+    //resetThis->_position = _center;
+    resetThis->_position = randomVector * radiusVariation;
     resetThis->_velocity = this->GetNewVelocityVector();
 }
 
@@ -343,14 +355,16 @@ Creator:    John Cox (7-2-2016)
 -----------------------------------------------------------------------------------------------*/
 glm::vec2 ParticleManager::GetNewVelocityVector() const
 {
-    // randomize between the min and max velocities to get a little variation
-    float velocityVariation = RandomOnRange0to1() * _velocityDelta;
-    float velocityMagnitude = _velocityMin + velocityVariation;
-
     // this demo particle "manager" emits in a circle, so get a random 2D direction
+    // Note: The hard-coded mod100 is just to prevent the random axis magnitudes from 
+    // getting too crazy different from each other.
     float newX = (float)(RandomPosAndNeg() % 100);
     float newY = (float)(RandomPosAndNeg() % 100);
     glm::vec2 randomVelocityVector = glm::normalize(glm::vec2(newX, newY));
     
+    // randomize between the min and max velocities to get a little variation
+    float velocityVariation = RandomOnRange0to1() * _velocityDelta;
+    float velocityMagnitude = _velocityMin + velocityVariation;
+
     return randomVelocityVector * velocityMagnitude;
 }

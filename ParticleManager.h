@@ -68,4 +68,5 @@ private:
     unsigned int _unifLocRadiusSqr;
     unsigned int _unifLocEmitterCenter;
     unsigned int _unifLocMaxParticlesEmittedPerFrame;
+    unsigned int _unifLocMaxParticleCount;
 };

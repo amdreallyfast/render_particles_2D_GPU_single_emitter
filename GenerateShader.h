@@ -1,4 +1,5 @@
 #pragma once
 
 // this is a "barebones" program, so the file names are hard-coded
-unsigned int GenerateShaderProgram();
+unsigned int GenerateVertexShaderProgram();
+unsigned int GenerateComputeShaderProgram();

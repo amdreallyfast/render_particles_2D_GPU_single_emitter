@@ -7,18 +7,21 @@
 #include <fstream>
 #include <sstream>
 
+
 /*-----------------------------------------------------------------------------------------------
 Description:
     Encapsulates the creation of an OpenGL GPU program, including the compilation and linking of
     shaders.  It tries to cover all the basics and the error reporting and is as self-contained
     as possible, only returning a program ID when it is finished.
+
+    In particular, this one loads the vertex and fragment parts of the shader program.
 Parameters: None
 Returns:
     The OpenGL ID of the GPU program.
 Exception:  Safe
 Creator:    John Cox (2-13-2016)
 -----------------------------------------------------------------------------------------------*/
-unsigned int GenerateShaderProgram()
+unsigned int GenerateVertexShaderProgram()
 {
     // hard-coded ignoring possible errors like a boss
 
@@ -108,3 +111,70 @@ unsigned int GenerateShaderProgram()
     // done here
     return programId;
 }
+
+/*-----------------------------------------------------------------------------------------------
+Description:
+    Encapsulates the creation of an OpenGL GPU program, including the compilation and linking of
+    shaders.  It tries to cover all the basics and the error reporting and is as self-contained
+    as possible, only returning a program ID when it is finished.
+
+    In particular, this one loads the compute.
+Parameters: None
+Returns:
+    The OpenGL ID of the GPU program.
+Exception:  Safe
+Creator:    John Cox (7-30-2016)
+-----------------------------------------------------------------------------------------------*/
+unsigned int GenerateComputeShaderProgram()
+{
+    // hard-coded ignoring possible errors like a boss
+
+    std::ifstream shaderFile("shaderParticle.comp");
+    std::stringstream shaderData;
+    shaderData << shaderFile.rdbuf();
+    shaderFile.close();
+    std::string tempFileContents = shaderData.str();
+    GLuint compShaderId = glCreateShader(GL_COMPUTE_SHADER);
+    const GLchar *bytes[] = { tempFileContents.c_str() };
+    const GLint strLengths[] = { (int)tempFileContents.length() };
+    glShaderSource(compShaderId, 1, bytes, strLengths);
+    glCompileShader(compShaderId);
+
+    GLint isCompiled = 0;
+    glGetShaderiv(compShaderId, GL_COMPILE_STATUS, &isCompiled);
+    if (isCompiled == GL_FALSE)
+    {
+        GLchar errLog[128];
+        GLsizei *logLen = 0;
+        glGetShaderInfoLog(compShaderId, 128, logLen, errLog);
+        printf("compute shader failed: '%s'\n", errLog);
+        glDeleteShader(compShaderId);
+        return 0;
+    }
+
+    GLuint programId = glCreateProgram();
+    glAttachShader(programId, compShaderId);
+    glLinkProgram(programId);
+
+    // the program contains binary, linked versions of the shaders, so clean up the compile 
+    // objects
+    // Note: Shader objects need to be un-linked before they can be deleted.  This is ok because
+    // the program safely contains the shaders in binary form.
+    glDetachShader(programId, compShaderId);
+    glDeleteShader(compShaderId);
+
+    // check if the program was built ok
+    GLint isLinked = 0;
+    glGetProgramiv(programId, GL_LINK_STATUS, &isLinked);
+    if (isLinked == GL_FALSE)
+    {
+        printf("compute program didn't compile\n");
+        glDeleteProgram(programId);
+        return 0;
+    }
+
+    // done here
+    return programId;
+}
+
+

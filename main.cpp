@@ -66,7 +66,8 @@ void Init()
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
 
-    GLuint particleProgramId = GenerateShaderProgram();
+    GLuint particleProgramId = GenerateVertexShaderProgram();
+    GLuint computeProgramId = GenerateComputeShaderProgram();
 
     // all values are in windows space (X and Y limited to [-1,+1])
     unsigned int totalParticles = 10000;
@@ -76,6 +77,7 @@ void Init()
     float minVelocity = 0.2f;
     float maxVelocity = 0.6f;
     gParticleManager.Init(particleProgramId,
+        computeProgramId,
         totalParticles,
         maxParticlesEmittedPerFrame,
         center,

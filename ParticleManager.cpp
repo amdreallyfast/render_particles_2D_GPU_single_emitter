@@ -46,6 +46,7 @@ Creator:    John Cox (7-26-2016)
 void ParticleManager::Cleanup()
 {
     glDeleteProgram(_programId);
+    glDeleteProgram(_computeProgramId);
     glDeleteBuffers(1, &_arrayBufferId);
     glDeleteVertexArrays(1, &_vaoId);
 }
@@ -58,6 +59,7 @@ Description:
     radius.  Calculates the velocity delta from the provided min and max velocities.
 Parameters: 
     programId       The shader program must be constructed prior to this.
+    computeProgramId    Same issue.
     numParticles    The maximum number of particles that the manager has to work with.
     maxParticlesEmittedPerFrame     Self-explanatory.
     center          A 2D vector in window coordinates (X and Y bounded by [-1,+1]).
@@ -69,6 +71,7 @@ Exception:  Safe
 Creator:    John Cox (7-26-2016)
 -----------------------------------------------------------------------------------------------*/
 void ParticleManager::Init(unsigned int programId,
+    unsigned int computeProgramId,
     unsigned int numParticles, 
     unsigned int maxParticlesEmittedPerFrame,
     const glm::vec2 center,
@@ -77,6 +80,7 @@ void ParticleManager::Init(unsigned int programId,
     float maxVelocity)
 {
     _programId = programId;
+    _computeProgramId = computeProgramId;
     _allParticles.resize(numParticles);
     _sizeBytes = sizeof(Particle) * numParticles;
     _drawStyle = GL_POINTS;
@@ -92,6 +96,30 @@ void ParticleManager::Init(unsigned int programId,
         // pointer arithmetic will do
         this->ResetParticle(_allParticles.data() + particleCount);
     }
+
+    //uniform float uDeltaTimeSec;     // self-explanatory
+    //uniform float uRadiusSqr;
+    //uniform vec2 uEmitterCenter;
+    //uniform uint uMmaxParticlesEmittedPerFrame;
+
+    _unifLocDeltaTimeSec = glGetUniformLocation(_computeProgramId, "uDeltaTimeSec");
+    _unifLocRadiusSqr = glGetUniformLocation(_computeProgramId, "uRadiusSqr");
+    _unifLocEmitterCenter = glGetUniformLocation(_computeProgramId, "uEmitterCenter");
+    _unifLocMaxParticlesEmittedPerFrame = glGetUniformLocation(_computeProgramId, "uMmaxParticlesEmittedPerFrame");
+
+    glUniform1f(_unifLocRadiusSqr, _radiusSqr);
+    glUniform1ui(_unifLocMaxParticlesEmittedPerFrame, maxParticlesEmittedPerFrame);
+
+    // feeding vectors into uniforms requires an array, or at least they need to be contiguous 
+    // in memory, and I would rather explicitly spell out an array than assume the value order 
+    // in a 3rd party struct
+    float centerArr[2] = { center.x, center.y };
+    glUniform2fv(_unifLocEmitterCenter, 1, centerArr);
+
+
+    /*int wrkGroupCount = */
+
+
 
     // initialize OpenGL objects
     // Note: MUST bind the program beforehand or else the VAO generation and binding will blow 

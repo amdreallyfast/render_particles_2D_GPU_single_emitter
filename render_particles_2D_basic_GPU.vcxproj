@@ -151,6 +151,7 @@
     <ClCompile Include="RandomToast.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaderParticle.comp" />
     <None Include="shaderParticle.frag" />
     <None Include="shaderParticle.vert" />
   </ItemGroup>

@@ -19,6 +19,7 @@ public:
     ParticleManager();
     ~ParticleManager();
     void Init(unsigned int programId,
+        unsigned int computeProgramId,
         unsigned int numParticles, 
         unsigned int maxParticlesEmittedPerFrame,
         const glm::vec2 center,
@@ -45,6 +46,7 @@ private:
     // Note: IDs are GLuint (unsigned int), draw style is GLenum (unsigned int), GLushort is 
     // unsigned short.
     unsigned int _programId;
+    unsigned int _computeProgramId;
     unsigned int _vaoId;
     unsigned int _arrayBufferId;
     unsigned int _drawStyle;    // GL_TRIANGLES, GL_LINES, etc.
@@ -52,4 +54,14 @@ private:
     std::vector<Particle> _allParticles;
     unsigned int _maxParticlesEmittedPerFrame;
 
+    // these are associated with the compute shader
+    // Note: To be honest, the only one that needs to be kept around in this demo is the one for 
+    // delta time.  That needs to be updated potentially every frame (this demo hard codes it, 
+    // but eh?).  Nevertheless, if the user wants to expand and shrink the circle or move the 
+    // emitter or flucuate how many particles can be emitted per frame, then these uniforms 
+    // could be useful.
+    unsigned int _unifLocDeltaTimeSec;
+    unsigned int _unifLocRadiusSqr;
+    unsigned int _unifLocEmitterCenter;
+    unsigned int _unifLocMaxParticlesEmittedPerFrame;
 };

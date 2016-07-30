@@ -48,11 +48,15 @@ private:
     unsigned int _programId;
     unsigned int _computeProgramId;
     unsigned int _vaoId;
-    unsigned int _arrayBufferId;
+    //unsigned int _arrayBufferId;
     unsigned int _drawStyle;    // GL_TRIANGLES, GL_LINES, etc.
     unsigned int _sizeBytes;    // useful for glBufferSubData(...)
     std::vector<Particle> _allParticles;
     unsigned int _maxParticlesEmittedPerFrame;
+
+
+    unsigned int _shaderBufferId;
+
 
     // these are associated with the compute shader
     // Note: To be honest, the only one that needs to be kept around in this demo is the one for 

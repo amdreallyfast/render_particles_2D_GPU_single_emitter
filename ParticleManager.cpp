@@ -197,6 +197,7 @@ void ParticleManager::Init(unsigned int programId,
     itemType = GL_FLOAT;
     numItems = sizeof(Particle::_velocity) / sizeof(float);
     bufferStartOffset += sizeof(Particle::_position);
+    //bufferStartOffset += (sizeof(float) * 2);
     vertexArrayIndex++;
     glEnableVertexAttribArray(vertexArrayIndex);
     glVertexAttribPointer(vertexArrayIndex, numItems, itemType, GL_FALSE, bytesPerStep, (void *)bufferStartOffset);
@@ -205,6 +206,7 @@ void ParticleManager::Init(unsigned int programId,
     itemType = GL_INT;
     numItems = sizeof(Particle::_isActive) / sizeof(int);
     bufferStartOffset += sizeof(Particle::_velocity);
+    //bufferStartOffset += (sizeof(float) * 2);
     vertexArrayIndex++;
     glEnableVertexAttribArray(vertexArrayIndex);
     glVertexAttribPointer(vertexArrayIndex, numItems, itemType, GL_FALSE, bytesPerStep, (void *)bufferStartOffset);
@@ -236,7 +238,7 @@ void ParticleManager::Update(float deltaTimeSec)
 
     // the work groups specified here MUST (??you sure??) match the values specified by 
     // "local_size_x", "local_size_y", and "local_size_z" in the compute shader's input layout
-    GLuint numWorkGroupsX = (_allParticles.size() / 128) + 1;
+    GLuint numWorkGroupsX = (_allParticles.size() / 256) + 1;
     GLuint numWorkGroupsY = 1;
     GLuint numWorkGroupsZ = 1;
     glDispatchCompute(numWorkGroupsX, numWorkGroupsY, numWorkGroupsZ);
@@ -303,7 +305,7 @@ Creator:    John Cox (7-2-2016)
 -----------------------------------------------------------------------------------------------*/
 bool ParticleManager::OutOfBounds(const Particle &p) const
 {
-    glm::vec2 centerToParticle = p._position - _center;
+    glm::vec4 centerToParticle = p._position - glm::vec4(_center, 0.0f, 0.0f);
     float distSqr = glm::dot(centerToParticle, centerToParticle);
     if (distSqr > _radiusSqr)
     {
@@ -338,8 +340,8 @@ void ParticleManager::ResetParticle(Particle *resetThis) const
     float radiusVariation = RandomOnRange0to1() * 0.1f; 
 
     //resetThis->_position = _center;
-    resetThis->_position = randomVector * radiusVariation;
-    resetThis->_velocity = this->GetNewVelocityVector();
+    resetThis->_position = glm::vec4(_center + (randomVector * radiusVariation), 0.0f, 0.0f);
+    resetThis->_velocity = glm::vec4(this->GetNewVelocityVector(), 0.0f, 0.0f);
 }
 
 /*-----------------------------------------------------------------------------------------------

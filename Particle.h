@@ -1,6 +1,8 @@
 #pragma once
 
-#include "glm/vec2.hpp"
+//#include "glm/vec2.hpp"
+#include "glm/vec4.hpp"
+
 
 /*-----------------------------------------------------------------------------------------------
 Description:
@@ -12,11 +14,13 @@ Creator:    John Cox (7-2-2016)
 -----------------------------------------------------------------------------------------------*/
 struct Particle
 {
-    glm::vec2 _position;
-    glm::vec2 _velocity;
+    //glm::vec2 _position; float f1[2];
+    //glm::vec2 _velocity; float f2[2];
+    glm::vec4 _position;
+    glm::vec4 _velocity;
 
     // Note: Booleans cannot be uploaded to the shader 
     // (https://www.opengl.org/sdk/docs/man/html/glVertexAttribPointer.xhtml), so send the 
     // "is active" flag as an integer.  It is understood 
-    int _isActive;
+    int _isActive; int iBuffer[3];
 };

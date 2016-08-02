@@ -1,11 +1,20 @@
 #version 440
 
+//struct Particle
+//{
+//    vec2 _position;
+//    vec2 _velocity;
+//    int _isActive;
+//};
+
+// work this out as a vec4 (may be byte allignment issues)
 struct Particle
 {
-    vec2 _position;
-    vec2 _velocity;
+    vec4 _position;
+    vec4 _velocity;
     int _isActive;
 };
+
 
 // work item indices for the particle array
 // Note: This layout must be specified in the following style.  Replacing "local_size_x" with 
@@ -13,7 +22,7 @@ struct Particle
 // so "local_Size_X" is still fine.
 // Also Note: The sizes here MUST (??you sure??) match the work group sizes specified when 
 // calling glDispatchCompute(...).
-layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
 layout (binding = 0) buffer ParticleBuffer {
     Particle AllParticles[];
@@ -34,17 +43,16 @@ void main()
     // Also Note: The number of dispatched work groups may result in an index that is beyond the 
     // maximum number of particles, so check the value against the max.
     uint index = gl_GlobalInvocationID.x;
-    //if (index < uMaxParticleCount)
+    if (index < uMaxParticleCount)
     {
         // as OpenGL 4.4, compute shaders don't have C's idea of pointers or C++'s idea of 
         // reference, so make a copy of the particle, work with it, and copy it back in
         Particle p = AllParticles[index];
 
         // update position
-        vec2 deltaPosition = p._velocity * uDeltaTimeSec;
-        //deltaPosition = vec2(0.0f, 0.0f);
+        //vec2 deltaPosition = p._velocity * uDeltaTimeSec;
+        vec4 deltaPosition = p._velocity * uDeltaTimeSec;
         p._position = p._position + deltaPosition;
-        //p._position = deltaPosition;
     
         //// if it went out of bounds, restart it
         //vec2 distToCenter = p._position - uEmitterCenter;

@@ -34,7 +34,7 @@ void main()
     // Also Note: The number of dispatched work groups may result in an index that is beyond the 
     // maximum number of particles, so check the value against the max.
     uint index = gl_GlobalInvocationID.x;
-    if (index < uMaxParticleCount)
+    //if (index < uMaxParticleCount)
     {
         // as OpenGL 4.4, compute shaders don't have C's idea of pointers or C++'s idea of 
         // reference, so make a copy of the particle, work with it, and copy it back in
@@ -42,9 +42,9 @@ void main()
 
         // update position
         vec2 deltaPosition = p._velocity * uDeltaTimeSec;
-        deltaPosition = vec2(0.0f, 0.0f);
-        //p._position = p._position + deltaPosition;
-        p._position = deltaPosition;
+        //deltaPosition = vec2(0.0f, 0.0f);
+        p._position = p._position + deltaPosition;
+        //p._position = deltaPosition;
     
         //// if it went out of bounds, restart it
         //vec2 distToCenter = p._position - uEmitterCenter;

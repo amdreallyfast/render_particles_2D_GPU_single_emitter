@@ -74,7 +74,7 @@ void Init()
     unsigned int maxParticlesEmittedPerFrame = 200;
     glm::vec2 center = glm::vec2(+0.3f, +0.3f);
     float radius = 0.75f;
-    float minVelocity = 0.2f;
+    float minVelocity = 0.5f;
     float maxVelocity = 0.6f;
     gParticleManager.Init(particleProgramId,
         computeProgramId,

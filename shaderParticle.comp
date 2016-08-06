@@ -1,20 +1,15 @@
 #version 440
 
-//struct Particle
-//{
-//    vec2 _position;
-//    vec2 _velocity;
-//    int _isActive;
-//};
-
-// work this out as a vec4 (may be byte allignment issues)
+// even though this is a 2D program, I wasn't able to figure out the byte misalignments 
+// between C++ and GLSL (every variable is aligned on a 16byte boundry, but adding 2-float 
+// padding to glm::vec2 didn't work and the compute shader just didn't send any particles 
+// anywhere), so I just used glm::vec4 
 struct Particle
 {
     vec4 _position;
     vec4 _velocity;
     int _isActive;
 };
-
 
 // work item indices for the particle array
 // Note: This layout must be specified in the following style.  Replacing "local_size_x" with 
@@ -30,7 +25,7 @@ layout (binding = 0) buffer ParticleBuffer {
 
 uniform float uDeltaTimeSec;     // self-explanatory
 uniform float uRadiusSqr;
-uniform vec2 uEmitterCenter;
+uniform vec4 uEmitterCenter;
 uniform uint uMaxParticlesEmittedPerFrame;
 uniform uint uMaxParticleCount;
 //??layout atomic counter for particlesEmittedThisFrame? see https://www.opengl.org/wiki/Atomic_Counter ??
@@ -50,18 +45,17 @@ void main()
         Particle p = AllParticles[index];
 
         // update position
-        //vec2 deltaPosition = p._velocity * uDeltaTimeSec;
         vec4 deltaPosition = p._velocity * uDeltaTimeSec;
         p._position = p._position + deltaPosition;
     
-        //// if it went out of bounds, restart it
-        //vec2 distToCenter = p._position - uEmitterCenter;
-        //float distSqr = dot(distToCenter, distToCenter);
-        //if (distSqr > uRadiusSqr)
-        //{
-        //    // just a simple reset for now
-        //    p._position = uEmitterCenter;
-        //}
+        // if it went out of bounds, restart it
+        vec4 distToCenter = p._position - uEmitterCenter;
+        float distSqr = dot(distToCenter, distToCenter);
+        if (distSqr > uRadiusSqr)
+        {
+            // just a simple reset for now
+            p._position = uEmitterCenter;
+        }
 
         // copy it back in
         AllParticles[index] = p;

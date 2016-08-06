@@ -47,7 +47,6 @@ void ParticleManager::Cleanup()
 {
     glDeleteProgram(_programId);
     glDeleteProgram(_computeProgramId);
-    //glDeleteBuffers(1, &_arrayBufferId);
     glDeleteBuffers(1, &_shaderBufferId);
     glDeleteVertexArrays(1, &_vaoId);
 }
@@ -113,7 +112,7 @@ void ParticleManager::Init(unsigned int programId,
     // feeding vectors into uniforms requires an array, or at least they need to be contiguous 
     // in memory, and I would rather explicitly spell out an array than assume the value order 
     // in a 3rd party struct
-    float centerArr[2] = { center.x, center.y };
+    float centerArr[4] = { center.x, center.y, 0.0f, 0.0f };
     glUniform2fv(_unifLocEmitterCenter, 1, centerArr);
     
     //??why are these work group counts all undefined??
@@ -138,16 +137,13 @@ void ParticleManager::Init(unsigned int programId,
 
     glUseProgram(0);
 
-
     // no program binding needed 
     // Note: Using a "shader storage buffer" because, unlike the vertex array buffer, this same buffer can be used for both the compute shader and the vertex shader.
-
     _shaderBufferId = 0;
     glGenBuffers(1, &_shaderBufferId);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, _shaderBufferId);
     glBufferData(GL_SHADER_STORAGE_BUFFER, _allParticles.size() * sizeof(Particle), _allParticles.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, _shaderBufferId);  // ??the hey does this do??
-
 
     // now set up the vertex array indices for the drawing shader
     // Note: MUST bind the program beforehand or else the VAO binding will blow up.  It won't 
@@ -158,26 +154,6 @@ void ParticleManager::Init(unsigned int programId,
     glBindVertexArray(_vaoId);
     glBindBuffer(GL_ARRAY_BUFFER, _shaderBufferId);
     // do NOT call glBufferData(...) because info was already loaded
-
-
-    //// initialize OpenGL objects
-    //// Note: MUST bind the program beforehand or else the VAO binding will blow up.  It won't 
-    //// spit out an error but will rather silently bind to whatever program is currently bound, 
-    //// even if it is the undefined program 0.
-    //glUseProgram(programId);
-
-    //glGenVertexArrays(1, &_vaoId);
-    //glGenBuffers(1, &_arrayBufferId);
-
-    //// the order of vertex array / buffer array binding doesn't matter so long as both are bound 
-    //// before setting vertex array attributes
-    //glBindVertexArray(_vaoId);
-    //glBindBuffer(GL_ARRAY_BUFFER, _arrayBufferId);
-
-    //// just allocate space now, and send updated data at render time
-    //GLuint bufferSizeBytes = sizeof(Particle);
-    //bufferSizeBytes *= numParticles;
-    //glBufferData(GL_ARRAY_BUFFER, bufferSizeBytes, 0, GL_DYNAMIC_DRAW);
 
     // position appears first in structure and so is attribute 0 
     // velocity appears second and is attribute 1
@@ -197,7 +173,6 @@ void ParticleManager::Init(unsigned int programId,
     itemType = GL_FLOAT;
     numItems = sizeof(Particle::_velocity) / sizeof(float);
     bufferStartOffset += sizeof(Particle::_position);
-    //bufferStartOffset += (sizeof(float) * 2);
     vertexArrayIndex++;
     glEnableVertexAttribArray(vertexArrayIndex);
     glVertexAttribPointer(vertexArrayIndex, numItems, itemType, GL_FALSE, bytesPerStep, (void *)bufferStartOffset);
@@ -206,7 +181,6 @@ void ParticleManager::Init(unsigned int programId,
     itemType = GL_INT;
     numItems = sizeof(Particle::_isActive) / sizeof(int);
     bufferStartOffset += sizeof(Particle::_velocity);
-    //bufferStartOffset += (sizeof(float) * 2);
     vertexArrayIndex++;
     glEnableVertexAttribArray(vertexArrayIndex);
     glVertexAttribPointer(vertexArrayIndex, numItems, itemType, GL_FALSE, bytesPerStep, (void *)bufferStartOffset);
@@ -235,7 +209,6 @@ void ParticleManager::Update(float deltaTimeSec)
     glUseProgram(_computeProgramId);
     glUniform1f(_unifLocDeltaTimeSec, deltaTimeSec);
 
-
     // the work groups specified here MUST (??you sure??) match the values specified by 
     // "local_size_x", "local_size_y", and "local_size_z" in the compute shader's input layout
     GLuint numWorkGroupsX = (_allParticles.size() / 256) + 1;
@@ -253,42 +226,12 @@ void ParticleManager::Update(float deltaTimeSec)
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
     glUseProgram(0);
-
-    //unsigned int emitCounter = 0;
-    //for (size_t particleIndex = 0; particleIndex < _allParticles.size(); particleIndex++)
-    //{
-    //    Particle &particleRef = _allParticles[particleIndex];
-    //    if (this->OutOfBounds(particleRef))
-    //    {
-    //        particleRef._isActive = false;
-    //        Particle pCopy = (_allParticles[particleIndex]);
-    //        this->ResetParticle(&pCopy);
-    //        _allParticles[particleIndex] = pCopy;
-    //    }
-
-    //    // TODO: ?a way to make these conditions into assignments to avoid the pipeline thrashing? perhaps take advantage of "is active" being an integer??
-
-    //    // if vs else-if()? eh
-    //    if (!particleRef._isActive && emitCounter < _maxParticlesEmittedPerFrame)
-    //    {
-    //        particleRef._isActive = true;
-    //        emitCounter++;
-    //    }
-
-    //    if (particleRef._isActive)
-    //    {
-    //        particleRef._position = particleRef._position +
-    //            (particleRef._velocity * deltaTimeSec);
-    //    }
-    //}
 }
 
 void ParticleManager::Render()
 {
     glUseProgram(_programId);
     glBindVertexArray(_vaoId);
-    //glBindBuffer(GL_ARRAY_BUFFER, _arrayBufferId);
-    //glBufferSubData(GL_ARRAY_BUFFER, 0, _sizeBytes, _allParticles.data());
     glDrawArrays(_drawStyle, 0, _allParticles.size());
     glUseProgram(0);
 }
@@ -339,7 +282,6 @@ void ParticleManager::ResetParticle(Particle *resetThis) const
     // hard-coded region of radius 0.1f in window space
     float radiusVariation = RandomOnRange0to1() * 0.1f; 
 
-    //resetThis->_position = _center;
     resetThis->_position = glm::vec4(_center + (randomVector * radiusVariation), 0.0f, 0.0f);
     resetThis->_velocity = glm::vec4(this->GetNewVelocityVector(), 0.0f, 0.0f);
 }

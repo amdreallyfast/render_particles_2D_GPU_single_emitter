@@ -1,8 +1,6 @@
 #pragma once
 
-//#include "glm/vec2.hpp"
 #include "glm/vec4.hpp"
-
 
 /*-----------------------------------------------------------------------------------------------
 Description:
@@ -14,13 +12,16 @@ Creator:    John Cox (7-2-2016)
 -----------------------------------------------------------------------------------------------*/
 struct Particle
 {
-    //glm::vec2 _position; float f1[2];
-    //glm::vec2 _velocity; float f2[2];
+    // even though this is a 2D program, I wasn't able to figure out the byte misalignments 
+    // between C++ and GLSL (every variable is aligned on a 16byte boundry, but adding 2-float 
+    // padding to glm::vec2 didn't work and the compute shader just didn't send any particles 
+    // anywhere), so I just used glm::vec4 
+    // Note: Yes, I did take care of the byte offset in the vertex attrib pointer.
     glm::vec4 _position;
     glm::vec4 _velocity;
 
     // Note: Booleans cannot be uploaded to the shader 
     // (https://www.opengl.org/sdk/docs/man/html/glVertexAttribPointer.xhtml), so send the 
     // "is active" flag as an integer.  It is understood 
-    int _isActive; int iBuffer[3];
+    int _isActive; float iBuffer[3];
 };

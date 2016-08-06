@@ -70,11 +70,13 @@ void Init()
     GLuint computeProgramId = GenerateComputeShaderProgram();
 
     // all values are in windows space (X and Y limited to [-1,+1])
-    unsigned int totalParticles = 10000;
+    // Note: Toy with the values as you will.
+    //unsigned int totalParticles = 20000;
+    unsigned int totalParticles = 600000;
     unsigned int maxParticlesEmittedPerFrame = 200;
     glm::vec2 center = glm::vec2(+0.3f, +0.3f);
-    float radius = 0.75f;
-    float minVelocity = 0.5f;
+    float radius = 1.1f;
+    float minVelocity = 0.05f;
     float maxVelocity = 0.6f;
     gParticleManager.Init(particleProgramId,
         computeProgramId,
